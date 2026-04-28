@@ -1,0 +1,49 @@
+import { Login } from "../modules/login.modules.js"
+import { LoginValidated } from "../validates/login.validation.js"
+import bcrypt from "bcrypt"
+import JWT from "jsonwebtoken"
+import dotenv from "dotenv"
+
+dotenv.config()
+
+export const LoginControl = async (req, res, next) => {
+    try {
+        const { error, value } = LoginValidated.validate(req.body)
+
+        if (error) {
+            req.message = { "type": "Validation", "message": error.details, "status": 400 }
+            return next()
+        }
+
+        const { results, data } = await Login(value.email)
+
+        if (results == 0) {
+            req.message = { "type": "Not Found", "message": "The User NOT Exists", "status": 400 }
+            return next()
+        }
+
+        const { UsuContrasena, UsuID, RolPermisos } = data
+
+        if (await bcrypt.compare(value.password, UsuContrasena)) {
+            const payload = { id: UsuID, permissions: RolPermisos }
+
+            const config = { "algorithm": "HS512", "expiresIn": "1d" }
+
+            const token = JWT.sign(payload, process.env.SECRET, config)
+            req.message = {
+                "type": "Successfully", "message": {
+                    token,
+                    text: "Login Correctly"
+                }, "status": 200
+            }
+            return next()
+        }
+        else {
+            req.message = { "type": "Error", "message": "Incorrect credentials", "status": 400 }
+            return next()
+        }
+    } catch (err) {
+        req.message = { "type": "Error", "message": err.message, "status": 500 }
+        return next()
+    }
+}
