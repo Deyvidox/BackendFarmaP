@@ -50,17 +50,17 @@ export const UpdateMedicationControl = async (req, res) => {
     }
 };
 
-export const DeletePetControl = async (req, res) => {
+export const DeleteMedicationControl = async (req, res) => {
     try {
         const { id } = req.params;
-        await PetModel.DeletePet(id);
-        return res.status(200).json({ success: true, message: "Mascota eliminada correctamente." });
+        await MedicationModel.DeleteMedication(id);
+        return res.status(200).json({ success: true, message: "Medicamento eliminado correctamente." });
     } catch (error) {
         // Captura el error de integridad referencial del SQL (Error 23503)
         if (error.code === '23503') {
             return res.status(400).json({ 
                 success: false, 
-                message: "No se puede eliminar: la mascota tiene historial o citas vinculadas." 
+                message: "No se puede eliminar: el medicamento tiene registros vinculados." 
             });
         }
         return res.status(500).json({ success: false, message: error.message });

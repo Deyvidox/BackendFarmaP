@@ -37,15 +37,3 @@ export const RegisterValidated = Joi.object({
             'string.uuid': 'Role ID must be a valid UUID'
         })
 })
-        }),
-    
-    "password": Joi.string()
-        .min(8)
-        .pattern(/^(?=.*[A-Za-z])(?=.*\d)/)
-        .required()
-        .messages({
-            'string.empty': 'La contraseña es obligatoria',
-            'string.min': 'La contraseña debe tener al menos 8 caracteres',
-            'string.pattern.base': 'La contraseña debe contener al menos una letra y un número'
-        })
-})

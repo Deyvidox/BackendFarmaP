@@ -5,7 +5,7 @@ export const GetRoles = async () => {
     
     const sql = `
         SELECT "RolID", "RolNombre", "RolPermisos"
-        FROM public.Cat_Rol
+        FROM public."Cat_Rol"
         ORDER BY "RolID" ASC
     `;
 

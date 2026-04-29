@@ -4,16 +4,16 @@ export const Register = async (userData) => {
     console.log('📝 Ejecutando SQL INSERT en tabla Tbl_Usuario...')
     
     const sql = `
-        INSERT INTO public.Tbl_Usuario (
-            UsuID, 
-            RolID, 
-            UsuNombre, 
-            UsuCorreo, 
-            UsuContrasena, 
-            UsuEstado, 
-            UsuFechaRegistro
+        INSERT INTO public."Tbl_Usuario" (
+            "UsuarioID", 
+            "RolID", 
+            "UsuNombres", 
+            "UsuCorreo", 
+            "UsuContrasena", 
+            "UsuEstado", 
+            "UsuCreado"
         ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
-        RETURNING "UsuID", "UsuNombre", "UsuCorreo", "UsuFechaRegistro"
+        RETURNING "UsuarioID" AS "UsuID", "UsuNombres" AS "UsuNombre", "UsuCorreo", "UsuCreado" AS "UsuFechaRegistro"
     `
 
     const values = [

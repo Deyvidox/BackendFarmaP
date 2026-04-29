@@ -24,6 +24,18 @@ export const inventorySchema = z.object({
     usuario_registro: z.string().uuid("User ID must be a valid UUID")
 });
 
+export const validateInventoryBody = (req, res, next) => {
+    try {
+        inventorySchema.parse(req.body);
+        next();
+    } catch (error) {
+        return res.status(400).json({ 
+            success: false, 
+            errors: error.errors.map(e => e.message) 
+        });
+    }
+};
+
 export const validateInventoryUpdateBody = (req, res, next) => {
     try {
         // En multipart/form-data, req.body llega como strings, zod.coerce los arregla

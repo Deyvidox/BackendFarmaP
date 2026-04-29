@@ -32,7 +32,7 @@ export const GetAllMedications = async (filters) => {
 };
 
 export const CreateMedication = async (data) => {
-    const { 
+    const {
         codigo_nacional, nombre_comercial, nombre_generico, principio_activo, concentracion,
         forma_farmaceutica_id, via_administracion, laboratorio_id, categoria_medicamento_id,
         registro_sanitario, requiere_receta, condiciones_almacenamiento, temperatura_almacenamiento,
@@ -57,7 +57,7 @@ export const CreateMedication = async (data) => {
 };
 
 export const UpdateMedication = async (id, data) => {
-    const { 
+    const {
         nombre_comercial, nombre_generico, principio_activo, concentracion, via_administracion,
         registro_sanitario, requiere_receta, condiciones_almacenamiento, temperatura_almacenamiento,
         unidad_medida, cantidad_por_presentacion, image_url
@@ -87,16 +87,6 @@ export const UpdateMedication = async (id, data) => {
     const result = await database.query(query, values);
     return result.rows[0];
 };
-            species_id = COALESCE($6, species_id),
-            image_url = COALESCE($7, image_url),
-            updated_at = NOW()
-        WHERE id = $8 RETURNING *;
-    `;
-    const result = await database.query(query, [name, breed, color, status, gender, species_id, image_url, id]);
-    return result.rows[0];
-};
-
-export const DeletePet = async (id) => {
-    // Intenta borrar físicamente. Si falla por FK, el controlador manejará el error.
-    return await database.query("DELETE FROM public.pets WHERE id = $1", [id]);
+export const DeleteMedication = async (id) => {
+    return await database.query(`DELETE FROM "Tbl_Medicamento" WHERE "MedicamentoID" = $1`, [id]);
 };

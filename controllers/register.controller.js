@@ -84,7 +84,7 @@ export const RegisterControl = async (req, res, next) => {
 
 // Funciones auxiliares
 const checkEmailExists = async (email) => {
-    const sql = `SELECT COUNT(*) FROM public.Tbl_Usuario WHERE "UsuCorreo" = $1 AND "UsuEstado" = 'Active'`
+    const sql = `SELECT COUNT(*) FROM public."Tbl_Usuario" WHERE "UsuCorreo" = $1 AND "UsuEstado" = 'Active'`
     const { rows } = await database.query(sql, [email])
     return { "results": parseInt(rows[0].count) }
 }
