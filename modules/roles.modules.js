@@ -4,9 +4,9 @@ export const GetRoles = async () => {
     console.log('📝 Obteniendo roles de la base de datos...');
     
     const sql = `
-        SELECT "RolID", "RolNombre", "RolPermisos"
-        FROM public."Cat_Rol"
-        ORDER BY "RolID" ASC
+        SELECT id, name, permissions
+        FROM roles
+        ORDER BY id ASC
     `;
 
     try {

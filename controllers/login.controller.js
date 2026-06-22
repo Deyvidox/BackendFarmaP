@@ -15,17 +15,17 @@ export const LoginControl = async (req, res, next) => {
             return next()
         }
 
-        const { results, data } = await Login(value.email)
+        const { results, data } = await Login(value.login)
 
         if (results == 0) {
             req.message = { "type": "Not Found", "message": "The User NOT Exists", "status": 400 }
             return next()
         }
 
-        const { UsuContrasena, UsuID, RolPermisos } = data
+        const { password, id, permissions } = data
 
-        if (await bcrypt.compare(value.password, UsuContrasena)) {
-            const payload = { id: UsuID, permissions: RolPermisos }
+        if (await bcrypt.compare(value.password, password)) {
+            const payload = { id, permissions }
 
             const config = { "algorithm": "HS512", "expiresIn": "1d" }
 
@@ -36,6 +36,7 @@ export const LoginControl = async (req, res, next) => {
                     text: "Login Correctly"
                 }, "status": 200
             }
+
             return next()
         }
         else {

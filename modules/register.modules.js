@@ -1,28 +1,44 @@
 import database from "../database.js"
+import { randomUUID } from "crypto"
 
 export const Register = async (userData) => {
-    console.log('📝 Ejecutando SQL INSERT en tabla Tbl_Usuario...')
+    console.log('📝 Ejecutando SQL INSERT en tabla users...')
     
+    const userId = randomUUID()
+
     const sql = `
-        INSERT INTO public."Tbl_Usuario" (
-            "UsuarioID", 
-            "RolID", 
-            "UsuNombres", 
-            "UsuCorreo", 
-            "UsuContrasena", 
-            "UsuEstado", 
-            "UsuCreado"
-        ) VALUES ($1, $2, $3, $4, $5, $6, NOW())
-        RETURNING "UsuarioID" AS "UsuID", "UsuNombres" AS "UsuNombre", "UsuCorreo", "UsuCreado" AS "UsuFechaRegistro"
+        INSERT INTO users (
+            id,
+            role_id, 
+            identification_number, 
+            first_name, 
+            last_name, 
+            date_of_birth, 
+            phone, 
+            address, 
+            username, 
+            email, 
+            password, 
+            status, 
+            created_at, 
+            updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+        RETURNING id, username, email, first_name, last_name, created_at
     `
 
     const values = [
-        userData.usu_id,
-        userData.rol_id,
-        userData.usu_nombre,
-        userData.usu_correo,
-        userData.usu_contrasena,
-        userData.usu_estado
+        userId,
+        userData.role_id,
+        userData.identification_number || null,
+        userData.first_name,
+        userData.last_name,
+        userData.date_of_birth || null,
+        userData.phone || null,
+        userData.address || null,
+        userData.username,
+        userData.email,
+        userData.password,
+        userData.status
     ]
 
     console.log('📊 Valores SQL:', values.map((v, i) => `$${i+1}: ${v !== null ? v : 'NULL'}`).join(', '))
