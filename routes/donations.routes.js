@@ -6,13 +6,19 @@ import {
     CreateDonationControl,
     UpdateDonationControl,
     DeleteDonationControl,
-    GetDonorsControl
+    GetDonorsControl,
+    CreateDonorControl,
+    UpdateDonorControl,
+    DeleteDonorControl
 } from "../controllers/donations.controller.js"
 
 const routes = Router()
 
 routes.get("/", GetDonationsControl, Messages)
 routes.get("/donors", GetDonorsControl, Messages)
+routes.post("/donors", CreateDonorControl, Messages)
+routes.put("/donors/:id", UpdateDonorControl, Messages)
+routes.delete("/donors/:id", DeleteDonorControl, Messages)
 routes.get("/:id", GetDonationByIdControl, Messages)
 routes.post("/", CreateDonationControl, Messages)
 routes.put("/:id", UpdateDonationControl, Messages)

@@ -27,3 +27,19 @@ export const CreateMedicineValidated = Joi.object({
 })
 
 export const UpdateMedicineValidated = CreateMedicineValidated
+
+export const CreateInventoryMovementValidated = Joi.object({
+    "lot_id": Joi.string().guid({ version: ['uuidv4'] }).required().messages({
+        'string.empty': 'El ID del lote es obligatorio'
+    }),
+    "movement_type": Joi.string().valid('Entry', 'Exit', 'Adjustment').required().messages({
+        'any.only': 'El tipo de movimiento debe ser Entry, Exit o Adjustment'
+    }),
+    "quantity": Joi.number().integer().required().messages({
+        'number.base': 'La cantidad debe ser un número'
+    }),
+    "motive": Joi.string().required().messages({
+        'string.empty': 'El motivo es obligatorio'
+    }),
+    "user_id": Joi.string().guid({ version: ['uuidv4'] }).required()
+})

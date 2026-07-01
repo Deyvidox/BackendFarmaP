@@ -15,15 +15,12 @@ export const GetProviderRequests = async () => {
             pr.status,
             pr.observations,
             pr.created_at,
-            d.id AS provider_id,
-            d.name AS provider_name,
-            d.rif_cedula AS provider_rif,
-            dt.name AS provider_type,
+            p.name AS provider_name,
+            p.rif_cedula AS provider_rif,
             (SELECT COUNT(*) FROM provider_request_details prd WHERE prd.provider_request_id = pr.id) AS total_medicines,
             (SELECT COALESCE(SUM(prd.requested_quantity), 0) FROM provider_request_details prd WHERE prd.provider_request_id = pr.id) AS total_units
         FROM provider_requests pr
-        LEFT JOIN donors d ON d.id = pr.provider_id
-        LEFT JOIN donor_types dt ON dt.id = d.donor_type_id
+        LEFT JOIN providers p ON p.id = pr.provider_id
         ORDER BY pr.created_at DESC
     `
     const { rows, rowCount } = await database.query(sql)
@@ -33,11 +30,9 @@ export const GetProviderRequests = async () => {
 export const GetProviderRequestById = async (id) => {
     const sql = `
         SELECT pr.*,
-               d.name AS provider_name, d.rif_cedula AS provider_rif,
-               dt.name AS provider_type
+               p.name AS provider_name, p.rif_cedula AS provider_rif
         FROM provider_requests pr
-        LEFT JOIN donors d ON d.id = pr.provider_id
-        LEFT JOIN donor_types dt ON dt.id = d.donor_type_id
+        LEFT JOIN providers p ON p.id = pr.provider_id
         WHERE pr.id = $1
     `
     const { rows, rowCount } = await database.query(sql, [id])
@@ -160,17 +155,4 @@ export const DeleteProviderRequest = async (id) => {
     } finally {
         client.release()
     }
-}
-
-export const GetProviders = async () => {
-    const sql = `
-        SELECT d.id, d.name, d.rif_cedula, d.main_contact, d.contact_phone, d.contact_email, d.status,
-               dt.name AS donor_type
-        FROM donors d
-        LEFT JOIN donor_types dt ON dt.id = d.donor_type_id
-        WHERE d.status = 'Active'
-        ORDER BY d.name ASC
-    `
-    const { rows, rowCount } = await database.query(sql)
-    return { results: rowCount, data: rows }
 }

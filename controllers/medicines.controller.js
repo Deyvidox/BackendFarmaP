@@ -1,5 +1,5 @@
-import { GetMedicines, GetMedicineById, CreateMedicine, UpdateMedicine, DeleteMedicine, GetMedicineAlerts, GetInventory } from "../modules/medicines.modules.js"
-import { CreateMedicineValidated, UpdateMedicineValidated } from "../validates/medicines.validation.js"
+import { GetMedicines, GetMedicineById, CreateMedicine, UpdateMedicine, DeleteMedicine, GetMedicineAlerts, GetInventory, GetLotById, RetireLot, CreateInventoryMovement, GetLotMovements } from "../modules/medicines.modules.js"
+import { CreateMedicineValidated, UpdateMedicineValidated, CreateInventoryMovementValidated } from "../validates/medicines.validation.js"
 
 export const GetMedicinesControl = async (req, res, next) => {
     try {
@@ -96,6 +96,66 @@ export const GetInventoryControl = async (req, res, next) => {
     try {
         const { results, data } = await GetInventory()
         req.message = { type: "Successfully", message: { count: results, inventory: data }, status: 200 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+export const GetLotByIdControl = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const { results, data } = await GetLotById(id)
+        if (results === 0) {
+            req.message = { type: "Not Found", message: "Lote no encontrado", status: 404 }
+            return next()
+        }
+        req.message = { type: "Successfully", message: { lot: data }, status: 200 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+export const RetireLotControl = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const { results, data } = await RetireLot(id)
+        if (results === 0) {
+            req.message = { type: "Not Found", message: "Lote no encontrado", status: 404 }
+            return next()
+        }
+        req.message = { type: "Successfully", message: { text: "Lote retirado", lot: data }, status: 200 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+export const CreateInventoryMovementControl = async (req, res, next) => {
+    try {
+        const { error, value } = CreateInventoryMovementValidated.validate(req.body)
+        if (error) {
+            req.message = { type: "Validation", message: error.details, status: 400 }
+            return next()
+        }
+        const { results, data } = await CreateInventoryMovement(value)
+        req.message = { type: "Successfully", message: { text: "Movimiento registrado", movement: data }, status: 201 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+export const GetLotMovementsControl = async (req, res, next) => {
+    try {
+        const { lot_id } = req.params
+        const { results, data } = await GetLotMovements(lot_id)
+        req.message = { type: "Successfully", message: { count: results, movements: data }, status: 200 }
         return next()
     } catch (err) {
         req.message = { type: "Error", message: err.message, status: 500 }

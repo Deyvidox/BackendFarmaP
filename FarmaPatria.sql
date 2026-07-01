@@ -83,7 +83,7 @@ CREATE TABLE "beneficiaries" (
   "emergency_contact" varchar(150),
   "emergency_phone" varchar(20),
   "dependents" integer DEFAULT 0,
-  "monthly_income" decimal(10,2),
+  "occupation" varchar(100),
   "priority_level" beneficiary_priority,
   "status" beneficiary_status DEFAULT 'Active',
   "registration_date" date DEFAULT (current_date),

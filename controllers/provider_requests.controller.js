@@ -1,4 +1,4 @@
-import { GetProviderRequests, GetProviderRequestById, CreateProviderRequest, UpdateProviderRequest, DeleteProviderRequest, GetProviders } from "../modules/provider_requests.modules.js"
+import { GetProviderRequests, GetProviderRequestById, CreateProviderRequest, UpdateProviderRequest, DeleteProviderRequest } from "../modules/provider_requests.modules.js"
 import { CreateProviderRequestValidated, UpdateProviderRequestValidated } from "../validates/provider_requests.validation.js"
 
 export const GetProviderRequestsControl = async (req, res, next) => {
@@ -81,13 +81,3 @@ export const DeleteProviderRequestControl = async (req, res, next) => {
     }
 }
 
-export const GetProvidersControl = async (req, res, next) => {
-    try {
-        const { results, data } = await GetProviders()
-        req.message = { type: "Successfully", message: { count: results, providers: data }, status: 200 }
-        return next()
-    } catch (err) {
-        req.message = { type: "Error", message: err.message, status: 500 }
-        return next()
-    }
-}

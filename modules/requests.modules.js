@@ -12,11 +12,16 @@ export const GetRequests = async () => {
             r.status,
             r.review_observations AS observations,
             r.created_at,
+            r.beneficiary_id,
             b.first_name || ' ' || b.last_name AS beneficiary_name,
-            u.first_name || ' ' || u.last_name AS responsible_name
+            u.first_name || ' ' || u.last_name AS responsible_name,
+            rd.medicine_id,
+            m.commercial_name AS medicine_name
         FROM requests r
         LEFT JOIN beneficiaries b ON b.id = r.beneficiary_id
         LEFT JOIN users u ON u.id = r.receiver_user_id
+        LEFT JOIN request_details rd ON rd.request_id = r.id
+        LEFT JOIN medicines m ON m.id = rd.medicine_id
         ORDER BY r.created_at DESC
     `
     const { rows, rowCount } = await database.query(sql)

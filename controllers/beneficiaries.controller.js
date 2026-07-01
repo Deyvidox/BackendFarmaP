@@ -1,5 +1,6 @@
-import { GetBeneficiaries, GetBeneficiaryById, CreateBeneficiary, UpdateBeneficiary, DeleteBeneficiary } from "../modules/beneficiaries.modules.js"
-import { CreateBeneficiaryValidated, UpdateBeneficiaryValidated } from "../validates/beneficiaries.validation.js"
+import { GetBeneficiaries, GetBeneficiaryById, CreateBeneficiary, UpdateBeneficiary, DeleteBeneficiary, SaveBeneficiaryMedicalHistory, SaveBeneficiaryMedicines, AddBeneficiaryDisease, AddBeneficiaryVulnerability } from "../modules/beneficiaries.modules.js"
+import { CreateBeneficiaryValidated, UpdateBeneficiaryValidated, AddDiseaseValidated, AddVulnerabilityValidated } from "../validates/beneficiaries.validation.js"
+
 
 export const GetBeneficiariesControl = async (req, res, next) => {
     try {
@@ -74,6 +75,65 @@ export const DeleteBeneficiaryControl = async (req, res, next) => {
             return next()
         }
         req.message = { type: "Successfully", message: { text: "Beneficiario eliminado", beneficiary: data }, status: 200 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+export const SaveBeneficiaryMedicalHistoryControl = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const { diseases, vulnerabilities } = req.body
+        await SaveBeneficiaryMedicalHistory(id, diseases || [], vulnerabilities || [])
+        req.message = { type: "Successfully", message: { text: "Historial médico guardado exitosamente" }, status: 200 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+export const SaveBeneficiaryMedicinesControl = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        await SaveBeneficiaryMedicines(id, req.body)
+        req.message = { type: "Successfully", message: { text: "Medicamentos asignados al historial" }, status: 200 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+export const AddBeneficiaryDiseaseControl = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const { error, value } = AddDiseaseValidated.validate(req.body)
+        if (error) {
+            req.message = { type: "Validation", message: error.details, status: 400 }
+            return next()
+        }
+        const { results, data } = await AddBeneficiaryDisease(id, value)
+        req.message = { type: "Successfully", message: { text: "Enfermedad agregada exitosamente", disease: data }, status: 201 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+export const AddBeneficiaryVulnerabilityControl = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const { error, value } = AddVulnerabilityValidated.validate(req.body)
+        if (error) {
+            req.message = { type: "Validation", message: error.details, status: 400 }
+            return next()
+        }
+        const { results, data } = await AddBeneficiaryVulnerability(id, value)
+        req.message = { type: "Successfully", message: { text: "Vulnerabilidad agregada exitosamente", vulnerability: data }, status: 201 }
         return next()
     } catch (err) {
         req.message = { type: "Error", message: err.message, status: 500 }

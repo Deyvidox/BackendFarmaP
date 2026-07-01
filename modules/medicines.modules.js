@@ -168,3 +168,75 @@ export const GetInventory = async () => {
     const { rows, rowCount } = await database.query(sql)
     return { results: rowCount, data: rows }
 }
+
+export const GetLotById = async (id) => {
+    const sql = `
+        SELECT
+            ml.*,
+            m.commercial_name AS medicine,
+            m.national_code
+        FROM medicine_lots ml
+        INNER JOIN medicines m ON m.id = ml.medicine_id
+        WHERE ml.id = $1
+    `
+    const { rows, rowCount } = await database.query(sql, [id])
+    return { results: rowCount, data: rows[0] }
+}
+
+export const RetireLot = async (id) => {
+    const sql = `UPDATE medicine_lots SET status = 'Depleted', updated_at = NOW() WHERE id = $1 RETURNING id, lot_number`
+    const { rows, rowCount } = await database.query(sql, [id])
+    return { results: rowCount, data: rows[0] }
+}
+
+export const CreateInventoryMovement = async (data) => {
+    // 1. Get the current inventory ID and quantity for this lot
+    const invSql = `SELECT id, available_quantity FROM inventories WHERE lot_id = $1 LIMIT 1`
+    const { rows: invRows } = await database.query(invSql, [data.lot_id])
+    if (invRows.length === 0) throw new Error('Inventario no encontrado para este lote')
+    
+    const inventory = invRows[0]
+    const prevQty = inventory.available_quantity
+    let newQty = prevQty
+    
+    if (data.movement_type === 'Entry') newQty += data.quantity
+    else if (data.movement_type === 'Exit') newQty -= data.quantity
+    else if (data.movement_type === 'Adjustment') newQty += data.quantity // data.quantity can be negative for Adjustment
+    
+    if (newQty < 0) throw new Error('Stock insuficiente para realizar el movimiento')
+
+    // 2. Register the movement
+    const movId = randomUUID()
+    const movSql = `
+        INSERT INTO inventory_movements (
+            id, inventory_id, movement_type, quantity, previous_quantity, new_quantity, user_id, motive, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+        RETURNING id
+    `
+    await database.query(movSql, [movId, inventory.id, data.movement_type, data.quantity, prevQty, newQty, data.user_id, data.motive])
+    
+    // 3. Update the inventory
+    const updInvSql = `
+        UPDATE inventories 
+        SET available_quantity = $1, total_quantity = total_quantity + ($1 - $2), last_movement = NOW(), updated_at = NOW() 
+        WHERE id = $3
+    `
+    await database.query(updInvSql, [newQty, prevQty, inventory.id])
+    
+    return { results: 1, data: { movement_id: movId, new_quantity: newQty } }
+}
+
+export const GetLotMovements = async (lotId) => {
+    const sql = `
+        SELECT 
+            im.id, im.movement_type, im.quantity, im.previous_quantity, im.new_quantity, im.motive, im.created_at,
+            u.first_name || ' ' || u.last_name AS user_name
+        FROM inventory_movements im
+        INNER JOIN inventories i ON i.id = im.inventory_id
+        LEFT JOIN users u ON u.id = im.user_id
+        WHERE i.lot_id = $1
+        ORDER BY im.created_at DESC
+    `
+    const { rows, rowCount } = await database.query(sql, [lotId])
+    return { results: rowCount, data: rows }
+}

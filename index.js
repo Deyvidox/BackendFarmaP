@@ -22,6 +22,7 @@ import DeliveriesRoutes from "./routes/deliveries.routes.js";
 import CatalogsRoutes from "./routes/catalogs.routes.js";
 import DashboardRoutes from "./routes/dashboard.routes.js";
 import ProviderRequestsRoutes from "./routes/provider_requests.routes.js";
+import ProvidersRoutes from "./routes/providers.routes.js";
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use("/deliveries", DeliveriesRoutes);
 app.use("/catalogs", CatalogsRoutes);
 app.use("/dashboard", DashboardRoutes);
 app.use("/provider-requests", ProviderRequestsRoutes);
+app.use("/providers", ProvidersRoutes);
 
 // Verificación de inicio de servicios
 try {

@@ -5,14 +5,12 @@ import {
     GetProviderRequestByIdControl,
     CreateProviderRequestControl,
     UpdateProviderRequestControl,
-    DeleteProviderRequestControl,
-    GetProvidersControl
+    DeleteProviderRequestControl
 } from "../controllers/provider_requests.controller.js"
 
 const routes = Router()
 
 routes.get("/", GetProviderRequestsControl, Messages)
-routes.get("/providers", GetProvidersControl, Messages)
 routes.get("/:id", GetProviderRequestByIdControl, Messages)
 routes.post("/", CreateProviderRequestControl, Messages)
 routes.put("/:id", UpdateProviderRequestControl, Messages)

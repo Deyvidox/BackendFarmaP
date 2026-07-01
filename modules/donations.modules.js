@@ -92,7 +92,7 @@ export const DeleteDonation = async (id) => {
 
 export const GetDonors = async () => {
     const sql = `
-        SELECT d.id, d.name, d.rif_cedula, d.phone, d.email, d.status,
+        SELECT d.id, d.name, d.rif_cedula, d.main_contact, d.contact_phone, d.contact_email, d.status,
                dt.name AS donor_type
         FROM donors d
         LEFT JOIN donor_types dt ON dt.id = d.donor_type_id
@@ -102,3 +102,65 @@ export const GetDonors = async () => {
     const { rows, rowCount } = await database.query(sql)
     return { results: rowCount, data: rows }
 }
+
+export const CreateDonor = async (data) => {
+    const id = randomUUID()
+    const sql = `
+        INSERT INTO donors (
+            id, name, rif_cedula, main_contact, contact_phone,
+            contact_email, address, donation_frequency, donor_type_id,
+            status, created_at, updated_at
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'Active',NOW(),NOW())
+        RETURNING id, name, rif_cedula, status, created_at
+    `
+    const values = [
+        id,
+        data.name,
+        data.rif_cedula || null,
+        data.main_contact || null,
+        data.contact_phone || null,
+        data.contact_email || null,
+        data.address || null,
+        data.donation_frequency || null,
+        data.donor_type_id
+    ]
+    const { rows, rowCount } = await database.query(sql, values)
+    return { results: rowCount, data: rows[0] }
+}
+
+export const UpdateDonor = async (id, data) => {
+    const sql = `
+        UPDATE donors SET
+            name = $1,
+            rif_cedula = $2,
+            main_contact = $3,
+            contact_phone = $4,
+            contact_email = $5,
+            address = $6,
+            donation_frequency = $7,
+            donor_type_id = $8,
+            updated_at = NOW()
+        WHERE id = $9
+        RETURNING id, name, status
+    `
+    const values = [
+        data.name,
+        data.rif_cedula || null,
+        data.main_contact || null,
+        data.contact_phone || null,
+        data.contact_email || null,
+        data.address || null,
+        data.donation_frequency || null,
+        data.donor_type_id,
+        id
+    ]
+    const { rows, rowCount } = await database.query(sql, values)
+    return { results: rowCount, data: rows[0] }
+}
+
+export const DeleteDonor = async (id) => {
+    const sql = `UPDATE donors SET status = 'Inactive', updated_at = NOW() WHERE id = $1 RETURNING id, name`
+    const { rows, rowCount } = await database.query(sql, [id])
+    return { results: rowCount, data: rows[0] }
+}
+

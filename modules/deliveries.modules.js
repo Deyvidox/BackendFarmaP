@@ -6,6 +6,7 @@ export const GetDeliveries = async () => {
         SELECT
             e.id,
             e.delivery_date,
+            TO_CHAR(e.delivery_date, 'HH24:MI') AS delivery_time,
             e.delivery_type,
             e.delivery_point,
             e.delivery_witness AS witness_receptor,
@@ -16,11 +17,26 @@ export const GetDeliveries = async () => {
             e.created_at,
             u.first_name || ' ' || u.last_name AS responsible_name,
             b.first_name || ' ' || b.last_name AS beneficiary_name,
-            b.identification_number AS beneficiary_cedula
+            b.identification_number AS beneficiary_cedula,
+            med_sub.medicine_name,
+            COALESCE(dd_sub.total_quantity, 0) AS total_quantity
         FROM deliveries e
         LEFT JOIN users u ON u.id = e.delivery_user_id
         LEFT JOIN requests r ON r.id = e.request_id
         LEFT JOIN beneficiaries b ON b.id = r.beneficiary_id
+        LEFT JOIN LATERAL (
+            SELECT m.commercial_name AS medicine_name
+            FROM request_details rd
+            JOIN medicines m ON m.id = rd.medicine_id
+            WHERE rd.request_id = e.request_id
+            ORDER BY rd.created_at ASC
+            LIMIT 1
+        ) med_sub ON true
+        LEFT JOIN LATERAL (
+            SELECT COALESCE(SUM(dd.delivered_quantity), 0) AS total_quantity
+            FROM delivery_details dd
+            WHERE dd.delivery_id = e.id
+        ) dd_sub ON true
         ORDER BY e.created_at DESC
     `
     const { rows, rowCount } = await database.query(sql)
@@ -58,12 +74,14 @@ export const CreateDelivery = async (data) => {
     let devType = 'Pickup Point';
     if (data.delivery_type === 'HomeDelivery') devType = 'Home Delivery';
     else if (data.delivery_type === 'HealthCenter') devType = 'Health Center';
+    else if (data.delivery_type === 'Community') devType = 'Health Center';
 
     let devStatus = 'Scheduled';
     if (data.status === 'OnTheWay') devStatus = 'In Transit';
     else if (data.status === 'Delivered') devStatus = 'Delivered';
     else if (data.status === 'Cancelled') devStatus = 'Cancelled';
     else if (data.status === 'Failed') devStatus = 'Failed';
+    else if (data.status === 'Pending') devStatus = 'Scheduled';
 
     const values = [
         id,
@@ -82,6 +100,17 @@ export const CreateDelivery = async (data) => {
     return { results: rowCount, data: rows[0] }
 }
 
+export const DeleteDelivery = async (id) => {
+    const sql = `
+        UPDATE deliveries
+        SET status = 'Cancelled', updated_at = NOW()
+        WHERE id = $1
+        RETURNING id, status
+    `
+    const { rows, rowCount } = await database.query(sql, [id])
+    return { results: rowCount, data: rows[0] }
+}
+
 export const UpdateDelivery = async (id, data) => {
     const sql = `
         UPDATE deliveries SET
@@ -95,6 +124,7 @@ export const UpdateDelivery = async (id, data) => {
     else if (data.status === 'Delivered') devStatus = 'Delivered';
     else if (data.status === 'Cancelled') devStatus = 'Cancelled';
     else if (data.status === 'Failed') devStatus = 'Failed';
+    else if (data.status === 'Pending') devStatus = 'Scheduled';
 
     const values = [devStatus, data.observations || null, data.digital_signature || null, data.witness_receptor || null, id]
     const { rows, rowCount } = await database.query(sql, values)
