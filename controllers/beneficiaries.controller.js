@@ -1,6 +1,21 @@
-import { GetBeneficiaries, GetBeneficiaryById, CreateBeneficiary, UpdateBeneficiary, DeleteBeneficiary, SaveBeneficiaryMedicalHistory, SaveBeneficiaryMedicines, AddBeneficiaryDisease, AddBeneficiaryVulnerability } from "../modules/beneficiaries.modules.js"
-import { CreateBeneficiaryValidated, UpdateBeneficiaryValidated, AddDiseaseValidated, AddVulnerabilityValidated } from "../validates/beneficiaries.validation.js"
-
+import {
+    GetBeneficiaries,
+    GetBeneficiaryById,
+    CreateBeneficiary,
+    UpdateBeneficiary,
+    DeleteBeneficiary,
+    SaveBeneficiaryMedicalHistory,
+    SaveBeneficiaryMedicines,
+    AddBeneficiaryDisease,
+    AddBeneficiaryVulnerability,
+    GetBeneficiariesByMedicine
+} from "../modules/beneficiaries.modules.js"
+import {
+    CreateBeneficiaryValidated,
+    UpdateBeneficiaryValidated,
+    AddDiseaseValidated,
+    AddVulnerabilityValidated
+} from "../validates/beneficiaries.validation.js"
 
 export const GetBeneficiariesControl = async (req, res, next) => {
     try {
@@ -134,6 +149,27 @@ export const AddBeneficiaryVulnerabilityControl = async (req, res, next) => {
         }
         const { results, data } = await AddBeneficiaryVulnerability(id, value)
         req.message = { type: "Successfully", message: { text: "Vulnerabilidad agregada exitosamente", vulnerability: data }, status: 201 }
+        return next()
+    } catch (err) {
+        req.message = { type: "Error", message: err.message, status: 500 }
+        return next()
+    }
+}
+
+// NUEVO CONTROLADOR
+export const GetBeneficiariesByMedicineControl = async (req, res, next) => {
+    try {
+        const { medicineId } = req.params
+        const { results, data } = await GetBeneficiariesByMedicine(medicineId)
+        req.message = {
+            type: "Successfully",
+            message: {
+                context: "Beneficiarios que requieren este medicamento",
+                count: results,
+                beneficiaries: data
+            },
+            status: 200
+        }
         return next()
     } catch (err) {
         req.message = { type: "Error", message: err.message, status: 500 }

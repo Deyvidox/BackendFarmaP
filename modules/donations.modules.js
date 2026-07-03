@@ -40,45 +40,99 @@ export const GetDonationById = async (id) => {
 }
 
 export const CreateDonation = async (data) => {
-    const id = randomUUID()
-    const sql = `
-        INSERT INTO donations (
-            id, donor_id, donation_type_id, receiver_user_id,
-            reception_date, documentation_date, document_number,
-            estimated_total_value, destination_warehouse, transport_conditions,
-            observations, status, created_at, updated_at
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
-        RETURNING id, status, created_at
-    `
-    const values = [
-        id,
-        data.donor_id,
-        data.donation_type_id,
-        data.receiver_user_id || null,
-        data.reception_date || new Date(),
-        data.documentation_date || null,
-        data.document_number || null,
-        data.estimated_total_value || null,
-        data.destination_warehouse || null,
-        data.transport_conditions || null,
-        data.observations || null,
-        data.status || 'Received'
-    ]
-    const { rows, rowCount } = await database.query(sql, values)
-    return { results: rowCount, data: rows[0] }
+    const client = await database.connect()
+    try {
+        await client.query('BEGIN')
+
+        // 1. Insertar la donación
+        const donationId = randomUUID()
+        const donationSql = `
+            INSERT INTO donations (
+                id, donor_id, donation_type_id, receiver_user_id,
+                reception_date, documentation_date, document_number,
+                estimated_total_value, destination_warehouse, transport_conditions,
+                observations, status, created_at, updated_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
+            RETURNING id, status, created_at
+        `
+        const donationValues = [
+            donationId,
+            data.donor_id,
+            data.donation_type_id,
+            data.receiver_user_id || null,
+            data.reception_date || new Date(),
+            data.documentation_date || null,
+            data.document_number || null,
+            data.estimated_total_value || null,
+            data.destination_warehouse || null,
+            data.transport_conditions || null,
+            data.observations || null,
+            data.status || 'Received'
+        ]
+        await client.query(donationSql, donationValues)
+
+        // 2. Procesar cada medicamento donado
+        if (data.medicines && data.medicines.length > 0) {
+            for (const med of data.medicines) {
+                // Crear lote (quality_status usa el valor por defecto 'Optimal')
+                const lotId = randomUUID()
+                await client.query(`
+                    INSERT INTO medicine_lots (
+                        id, medicine_id, lot_number, expiration_date,
+                        total_units, donation_id, status, warehouse_location,
+                        created_at, updated_at
+                    ) VALUES ($1,$2,$3,$4,$5,$6,'Available',$7,NOW(),NOW())
+                `, [lotId, med.medicine_id, med.lot_number, med.expiration_date, med.quantity, donationId, data.destination_warehouse || 'San Cristóbal'])
+
+                // Crear inventario inicial (sin medicine_id)
+                const inventoryId = randomUUID()
+                await client.query(`
+                    INSERT INTO inventories (
+                        id, lot_id, location,
+                        total_quantity, available_quantity, reserved_quantity, delivered_quantity,
+                        minimum_stock, maximum_stock, status, last_movement, created_at, updated_at
+                    ) VALUES ($1,$2,$3,$4,$4,0,0,10,1000,'Optimal',NOW(),NOW(),NOW())
+                `, [inventoryId, lotId, data.destination_warehouse || 'San Cristóbal', med.quantity])
+
+                // Registrar movimiento de entrada (con referencia a la donación)
+                const movementId = randomUUID()
+                await client.query(`
+                    INSERT INTO inventory_movements (
+                        id, inventory_id, movement_type, quantity,
+                        previous_quantity, new_quantity, user_id, motive,
+                        reference_id, reference_type, created_at
+                    ) VALUES ($1,$2,'Entry',$3,0,$3,$4,'Donación recibida',$5,'donation',NOW())
+                `, [movementId, inventoryId, med.quantity, data.receiver_user_id || null, donationId])
+            }
+        }
+
+        await client.query('COMMIT')
+        return { results: 1, data: { id: donationId } }
+    } catch (err) {
+        await client.query('ROLLBACK')
+        throw err
+    } finally {
+        client.release()
+    }
 }
 
 export const UpdateDonation = async (id, data) => {
     const sql = `
         UPDATE donations SET
-            status = $1, observations = $2, destination_warehouse = $3,
-            transport_conditions = $4, updated_at = NOW()
+            status = COALESCE($1, status),
+            observations = COALESCE($2, observations),
+            reception_date = COALESCE($3, reception_date),
+            document_number = COALESCE($4, document_number),
+            updated_at = NOW()
         WHERE id = $5
         RETURNING id, status
     `
     const values = [
-        data.status, data.observations || null,
-        data.destination_warehouse || null, data.transport_conditions || null, id
+        data.status || null,
+        data.observations || null,
+        data.reception_date || null,
+        data.document_number || null,
+        id
     ]
     const { rows, rowCount } = await database.query(sql, values)
     return { results: rowCount, data: rows[0] }
@@ -163,4 +217,3 @@ export const DeleteDonor = async (id) => {
     const { rows, rowCount } = await database.query(sql, [id])
     return { results: rowCount, data: rows[0] }
 }
-

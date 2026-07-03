@@ -53,10 +53,6 @@ export const UpdateRequestControl = async (req, res, next) => {
             return next()
         }
         const { results, data } = await UpdateRequest(id, value)
-        if (results === 0) {
-            req.message = { type: "Not Found", message: "Solicitud no encontrada", status: 404 }
-            return next()
-        }
         req.message = { type: "Successfully", message: { text: "Solicitud actualizada", request: data }, status: 200 }
         return next()
     } catch (err) {

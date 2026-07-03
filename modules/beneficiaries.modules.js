@@ -221,7 +221,7 @@ export const SaveBeneficiaryMedicalHistory = async (beneficiaryId, diseases, vul
     const client = await database.connect()
     try {
         await client.query('BEGIN')
-        
+
         // 1. Clear existing diseases
         await client.query('DELETE FROM beneficiary_diseases WHERE beneficiary_id = $1', [beneficiaryId])
         // 2. Insert new diseases
@@ -246,7 +246,7 @@ export const SaveBeneficiaryMedicalHistory = async (beneficiaryId, diseases, vul
                 [id, beneficiaryId, finalDiseaseId, d.diagnosis_date || null, d.current_treatment || null, d.current_status || null, d.observations || null]
             )
         }
-        
+
         // 3. Clear existing vulnerabilities
         await client.query('DELETE FROM beneficiary_vulnerabilities WHERE beneficiary_id = $1', [beneficiaryId])
         // 4. Insert new vulnerabilities
@@ -258,7 +258,7 @@ export const SaveBeneficiaryMedicalHistory = async (beneficiaryId, diseases, vul
                 [id, beneficiaryId, v.vulnerability_type_id, v.observations || null]
             )
         }
-        
+
         await client.query('COMMIT')
         return { success: true }
     } catch (err) {
@@ -273,7 +273,7 @@ export const SaveBeneficiaryMedicines = async (id, data) => {
     try {
         await database.query('BEGIN')
         await database.query(`DELETE FROM beneficiary_medicines WHERE beneficiary_id = $1`, [id])
-        
+
         if (data.medicines && data.medicines.length > 0) {
             for (const med of data.medicines) {
                 await database.query(`
@@ -331,4 +331,25 @@ export const AddBeneficiaryVulnerability = async (beneficiaryId, data) => {
     ]
     const { rowCount, rows } = await database.query(sql, values)
     return { results: rowCount, data: rows[0] }
+}
+
+// NUEVA FUNCIÓN: obtener beneficiarios por medicamento
+export const GetBeneficiariesByMedicine = async (medicineId) => {
+    const sql = `
+        SELECT
+            b.id,
+            b.identification_number,
+            b.first_name,
+            b.last_name,
+            b.phone_personal,
+            b.priority_level,
+            c.name AS community_name
+        FROM beneficiaries b
+        INNER JOIN beneficiary_medicines bm ON bm.beneficiary_id = b.id
+        LEFT JOIN communities c ON c.id = b.community_id
+        WHERE bm.medicine_id = $1 AND b.status = 'Active'
+        ORDER BY b.last_name, b.first_name
+    `
+    const { rows, rowCount } = await database.query(sql, [medicineId])
+    return { results: rowCount, data: rows }
 }
