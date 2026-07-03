@@ -133,7 +133,39 @@ export const GetBeneficiaryById = async (id) => {
     return { results: rowCount, data: rows[0] }
 }
 
+const checkUniqueFields = async (data, excludeId = null) => {
+    const checks = []
+    if (data.identification_number) {
+        const query = excludeId
+            ? 'SELECT id FROM beneficiaries WHERE identification_number = $1 AND id <> $2'
+            : 'SELECT id FROM beneficiaries WHERE identification_number = $1'
+        const values = excludeId ? [data.identification_number, excludeId] : [data.identification_number]
+        const { rows } = await database.query(query, values)
+        if (rows.length > 0) checks.push('La cédula ya está registrada')
+    }
+    if (data.email) {
+        const query = excludeId
+            ? 'SELECT id FROM beneficiaries WHERE email = $1 AND id <> $2'
+            : 'SELECT id FROM beneficiaries WHERE email = $1'
+        const values = excludeId ? [data.email, excludeId] : [data.email]
+        const { rows } = await database.query(query, values)
+        if (rows.length > 0) checks.push('El email ya está registrado')
+    }
+    if (data.phone_personal) {
+        const query = excludeId
+            ? 'SELECT id FROM beneficiaries WHERE phone_personal = $1 AND id <> $2'
+            : 'SELECT id FROM beneficiaries WHERE phone_personal = $1'
+        const values = excludeId ? [data.phone_personal, excludeId] : [data.phone_personal]
+        const { rows } = await database.query(query, values)
+        if (rows.length > 0) checks.push('El teléfono ya está registrado')
+    }
+    if (checks.length > 0) {
+        throw new Error(checks.join('. '))
+    }
+}
+
 export const CreateBeneficiary = async (data) => {
+    await checkUniqueFields(data)
     const id = randomUUID()
     const sql = `
         INSERT INTO beneficiaries (
@@ -150,15 +182,15 @@ export const CreateBeneficiary = async (data) => {
     `
     const values = [
         id,
-        data.identification_number || null,
+        data.identification_number,
         data.first_name,
         data.last_name,
-        data.birth_date || null,
-        data.gender || null,
-        data.community_id || null,
+        data.birth_date,
+        data.gender,
+        data.community_id,
         data.detailed_address || null,
-        data.phone_personal || null,
-        data.email || null,
+        data.phone_personal,
+        data.email,
         data.emergency_contact || null,
         data.emergency_phone || null,
         data.dependents || 0,
@@ -170,6 +202,7 @@ export const CreateBeneficiary = async (data) => {
 }
 
 export const UpdateBeneficiary = async (id, data) => {
+    await checkUniqueFields(data, id)
     const sql = `
         UPDATE beneficiaries SET
             identification_number = $1,
@@ -191,15 +224,15 @@ export const UpdateBeneficiary = async (id, data) => {
         RETURNING id, first_name, last_name
     `
     const values = [
-        data.identification_number || null,
+        data.identification_number,
         data.first_name,
         data.last_name,
-        data.birth_date || null,
-        data.gender || null,
-        data.community_id || null,
+        data.birth_date,
+        data.gender,
+        data.community_id,
         data.detailed_address || null,
-        data.phone_personal || null,
-        data.email || null,
+        data.phone_personal,
+        data.email,
         data.emergency_contact || null,
         data.emergency_phone || null,
         data.dependents || 0,
@@ -222,9 +255,7 @@ export const SaveBeneficiaryMedicalHistory = async (beneficiaryId, diseases, vul
     try {
         await client.query('BEGIN')
 
-        // 1. Clear existing diseases
         await client.query('DELETE FROM beneficiary_diseases WHERE beneficiary_id = $1', [beneficiaryId])
-        // 2. Insert new diseases
         for (const d of diseases) {
             let finalDiseaseId = d.disease_id
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -247,9 +278,7 @@ export const SaveBeneficiaryMedicalHistory = async (beneficiaryId, diseases, vul
             )
         }
 
-        // 3. Clear existing vulnerabilities
         await client.query('DELETE FROM beneficiary_vulnerabilities WHERE beneficiary_id = $1', [beneficiaryId])
-        // 4. Insert new vulnerabilities
         for (const v of vulnerabilities) {
             const id = randomUUID()
             await client.query(
@@ -333,7 +362,6 @@ export const AddBeneficiaryVulnerability = async (beneficiaryId, data) => {
     return { results: rowCount, data: rows[0] }
 }
 
-// NUEVA FUNCIÓN: obtener beneficiarios por medicamento
 export const GetBeneficiariesByMedicine = async (medicineId) => {
     const sql = `
         SELECT
