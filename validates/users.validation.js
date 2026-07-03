@@ -15,8 +15,12 @@ export const UpdateUserValidated = Joi.object({
     "role_id": Joi.string().guid({ version: ['uuidv4'] }).required().messages({
         'string.guid': 'El rol seleccionado no es válido'
     }),
-    "identification_number": Joi.string().optional().allow('', null),
-    "phone": Joi.string().optional().allow('', null),
+    "identification_number": Joi.string().pattern(/^[VEJ]-\d{6,8}$/).optional().allow('', null).messages({
+        'string.pattern.base': 'Cédula/RIF inválida (formato: V-12345678)'
+    }),
+    "phone": Joi.string().pattern(/^\+58\s?\d{3}\s?\d{7}$/).optional().allow('', null).messages({
+        'string.pattern.base': 'Teléfono inválido (formato: +58 412 1234567)'
+    }),
     "address": Joi.string().optional().allow('', null),
     "status": Joi.string().valid('Active', 'Inactive', 'Suspended').optional(),
     "position": Joi.string().optional().allow('', null),

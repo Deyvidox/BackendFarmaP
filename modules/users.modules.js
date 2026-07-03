@@ -21,7 +21,6 @@ export const GetUsers = async () => {
             r.name AS role_name
         FROM users u
         INNER JOIN roles r ON r.id = u.role_id
-        WHERE u.status != 'Inactive'
         ORDER BY u.created_at DESC
     `
     const { rows, rowCount } = await database.query(sql)
@@ -43,7 +42,37 @@ export const GetUserById = async (id) => {
     return { results: rowCount, data: rows[0] }
 }
 
+const checkUniqueFields = async (data, excludeId = null) => {
+    const errors = []
+    if (data.email) {
+        const query = excludeId
+            ? 'SELECT id FROM users WHERE email = $1 AND id <> $2'
+            : 'SELECT id FROM users WHERE email = $1'
+        const values = excludeId ? [data.email, excludeId] : [data.email]
+        const { rows } = await database.query(query, values)
+        if (rows.length > 0) errors.push('El email ya está registrado')
+    }
+    if (data.identification_number) {
+        const query = excludeId
+            ? 'SELECT id FROM users WHERE identification_number = $1 AND id <> $2'
+            : 'SELECT id FROM users WHERE identification_number = $1'
+        const values = excludeId ? [data.identification_number, excludeId] : [data.identification_number]
+        const { rows } = await database.query(query, values)
+        if (rows.length > 0) errors.push('La cédula/RIF ya está registrada')
+    }
+    if (data.phone) {
+        const query = excludeId
+            ? 'SELECT id FROM users WHERE phone = $1 AND id <> $2'
+            : 'SELECT id FROM users WHERE phone = $1'
+        const values = excludeId ? [data.phone, excludeId] : [data.phone]
+        const { rows } = await database.query(query, values)
+        if (rows.length > 0) errors.push('El teléfono ya está registrado')
+    }
+    if (errors.length > 0) throw new Error(errors.join('. '))
+}
+
 export const UpdateUser = async (id, userData) => {
+    await checkUniqueFields(userData, id)
     const sql = `
         UPDATE users SET
             first_name = $1,
@@ -78,36 +107,14 @@ export const UpdateUser = async (id, userData) => {
 }
 
 export const DeleteUser = async (id) => {
-    const sql = `
-        UPDATE users SET status = 'Inactive', updated_at = NOW()
-        WHERE id = $1
-        RETURNING id, username
-    `
+    // Eliminación física
+    const sql = `DELETE FROM users WHERE id = $1 RETURNING id, username`
     const { rows, rowCount } = await database.query(sql, [id])
     return { results: rowCount, data: rows[0] }
 }
 
 export const GetUserStats = async () => {
-    const sql = `
-        SELECT
-            COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE u.status = 'Active') AS active,
-            COUNT(*) FILTER (WHERE u.status = 'Inactive') AS inactive,
-            COUNT(*) FILTER (WHERE u.status = 'Suspended') AS suspended,
-            json_object_agg(r.name, role_counts.cnt) AS by_role
-        FROM users u
-        INNER JOIN roles r ON r.id = u.role_id,
-        LATERAL (
-            SELECT r2.name, COUNT(*) AS cnt
-            FROM users u2
-            INNER JOIN roles r2 ON r2.id = u2.role_id
-            WHERE u2.status != 'Inactive'
-            GROUP BY r2.name
-        ) AS role_counts
-        WHERE u.status != 'Inactive'
-    `
-    // Simpler version
-    const totalSql = `SELECT COUNT(*) AS total FROM users WHERE status != 'Inactive'`
+    const totalSql = `SELECT COUNT(*) AS total FROM users`
     const activeSql = `SELECT COUNT(*) AS count FROM users WHERE status = 'Active'`
     const inactiveSql = `SELECT COUNT(*) AS count FROM users WHERE status = 'Inactive'`
     const suspendedSql = `SELECT COUNT(*) AS count FROM users WHERE status = 'Suspended'`
