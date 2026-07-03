@@ -26,7 +26,6 @@ export const GetMedicines = async () => {
         LEFT JOIN pharmaceutical_forms pf ON pf.id = m.pharmaceutical_form_id
         LEFT JOIN laboratories l ON l.id = m.laboratory_id
         LEFT JOIN medicine_categories mc ON mc.id = m.category_id
-        WHERE m.status = 'Active'
         ORDER BY m.commercial_name ASC
     `
     const { rows, rowCount } = await database.query(sql)
@@ -194,15 +193,15 @@ export const CreateInventoryMovement = async (data) => {
     const invSql = `SELECT id, available_quantity FROM inventories WHERE lot_id = $1 LIMIT 1`
     const { rows: invRows } = await database.query(invSql, [data.lot_id])
     if (invRows.length === 0) throw new Error('Inventario no encontrado para este lote')
-    
+
     const inventory = invRows[0]
     const prevQty = inventory.available_quantity
     let newQty = prevQty
-    
+
     if (data.movement_type === 'Entry') newQty += data.quantity
     else if (data.movement_type === 'Exit') newQty -= data.quantity
     else if (data.movement_type === 'Adjustment') newQty += data.quantity // data.quantity can be negative for Adjustment
-    
+
     if (newQty < 0) throw new Error('Stock insuficiente para realizar el movimiento')
 
     // 2. Register the movement
@@ -214,7 +213,7 @@ export const CreateInventoryMovement = async (data) => {
         RETURNING id
     `
     await database.query(movSql, [movId, inventory.id, data.movement_type, data.quantity, prevQty, newQty, data.user_id, data.motive])
-    
+
     // 3. Update the inventory
     const updInvSql = `
         UPDATE inventories 
@@ -222,7 +221,7 @@ export const CreateInventoryMovement = async (data) => {
         WHERE id = $3
     `
     await database.query(updInvSql, [newQty, prevQty, inventory.id])
-    
+
     return { results: 1, data: { movement_id: movId, new_quantity: newQty } }
 }
 
