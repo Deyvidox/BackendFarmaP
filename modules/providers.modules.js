@@ -2,10 +2,10 @@ import database from "../database.js"
 import { randomUUID } from "crypto"
 
 export const GetProviders = async () => {
+    // Mostrar todos los proveedores, sin filtrar por estado
     const sql = `
         SELECT p.id, p.name, p.rif_cedula, p.main_contact, p.contact_phone, p.contact_email, p.status, p.created_at
         FROM providers p
-        WHERE p.status = 'Active'
         ORDER BY p.name ASC
     `
     const { rows, rowCount } = await database.query(sql)
@@ -13,11 +13,7 @@ export const GetProviders = async () => {
 }
 
 export const GetProviderById = async (id) => {
-    const sql = `
-        SELECT p.*
-        FROM providers p
-        WHERE p.id = $1
-    `
+    const sql = `SELECT p.* FROM providers p WHERE p.id = $1`
     const { rows, rowCount } = await database.query(sql, [id])
     if (rowCount === 0) return { results: 0, data: null }
     return { results: 1, data: rows[0] }
@@ -74,7 +70,7 @@ export const UpdateProvider = async (id, data) => {
 }
 
 export const DeleteProvider = async (id) => {
-    const sql = `UPDATE providers SET status = 'Inactive', updated_at = NOW() WHERE id = $1 RETURNING id, name`
+    const sql = `DELETE FROM providers WHERE id = $1 RETURNING id, name`
     const { rows, rowCount } = await database.query(sql, [id])
     return { results: rowCount, data: rows[0] }
 }

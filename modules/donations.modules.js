@@ -44,7 +44,6 @@ export const CreateDonation = async (data) => {
     try {
         await client.query('BEGIN')
 
-        // 1. Insertar la donación
         const donationId = randomUUID()
         const donationSql = `
             INSERT INTO donations (
@@ -71,10 +70,8 @@ export const CreateDonation = async (data) => {
         ]
         await client.query(donationSql, donationValues)
 
-        // 2. Procesar cada medicamento donado
         if (data.medicines && data.medicines.length > 0) {
             for (const med of data.medicines) {
-                // Crear lote (quality_status usa el valor por defecto 'Optimal')
                 const lotId = randomUUID()
                 await client.query(`
                     INSERT INTO medicine_lots (
@@ -84,7 +81,6 @@ export const CreateDonation = async (data) => {
                     ) VALUES ($1,$2,$3,$4,$5,$6,'Available',$7,NOW(),NOW())
                 `, [lotId, med.medicine_id, med.lot_number, med.expiration_date, med.quantity, donationId, data.destination_warehouse || 'San Cristóbal'])
 
-                // Crear inventario inicial (sin medicine_id)
                 const inventoryId = randomUUID()
                 await client.query(`
                     INSERT INTO inventories (
@@ -94,7 +90,6 @@ export const CreateDonation = async (data) => {
                     ) VALUES ($1,$2,$3,$4,$4,0,0,10,1000,'Optimal',NOW(),NOW(),NOW())
                 `, [inventoryId, lotId, data.destination_warehouse || 'San Cristóbal', med.quantity])
 
-                // Registrar movimiento de entrada (con referencia a la donación)
                 const movementId = randomUUID()
                 await client.query(`
                     INSERT INTO inventory_movements (
@@ -145,12 +140,12 @@ export const DeleteDonation = async (id) => {
 }
 
 export const GetDonors = async () => {
+    // Mostrar todos los donantes, sin filtrar por estado
     const sql = `
         SELECT d.id, d.name, d.rif_cedula, d.main_contact, d.contact_phone, d.contact_email, d.status,
                dt.name AS donor_type
         FROM donors d
         LEFT JOIN donor_types dt ON dt.id = d.donor_type_id
-        WHERE d.status = 'Active'
         ORDER BY d.name ASC
     `
     const { rows, rowCount } = await database.query(sql)
@@ -193,27 +188,30 @@ export const UpdateDonor = async (id, data) => {
             address = $6,
             donation_frequency = $7,
             donor_type_id = $8,
+            status = COALESCE($9::donor_status, 'Active'::donor_status),
             updated_at = NOW()
-        WHERE id = $9
+        WHERE id = $10
         RETURNING id, name, status
     `
     const values = [
         data.name,
-        data.rif_cedula || null,
-        data.main_contact || null,
-        data.contact_phone || null,
-        data.contact_email || null,
+        data.rif_cedula,
+        data.main_contact,
+        data.contact_phone,
+        data.contact_email,
         data.address || null,
         data.donation_frequency || null,
         data.donor_type_id,
+        data.status || null,    // <-- se pasa como texto, el cast se hace en la consulta
         id
     ]
     const { rows, rowCount } = await database.query(sql, values)
     return { results: rowCount, data: rows[0] }
 }
 
+// DeleteDonor ahora es eliminación física
 export const DeleteDonor = async (id) => {
-    const sql = `UPDATE donors SET status = 'Inactive', updated_at = NOW() WHERE id = $1 RETURNING id, name`
+    const sql = `DELETE FROM donors WHERE id = $1 RETURNING id, name`
     const { rows, rowCount } = await database.query(sql, [id])
     return { results: rowCount, data: rows[0] }
 }
