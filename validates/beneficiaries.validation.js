@@ -37,10 +37,10 @@ export const CreateBeneficiaryValidated = Joi.object({
     }),
     "detailed_address": Joi.string().optional().allow('', null),
     "phone_personal": Joi.string()
-        .pattern(/^\+58\s?\d{3}\s?\d{7}$/)
+        .pattern(/^(?:\+58|0)\s?\d{3}\s?\d{7}$/)
         .required()
         .messages({
-            'string.pattern.base': 'El teléfono debe ser formato +58 412 1234567 o +584121234567',
+            'string.pattern.base': 'El teléfono debe ser formato +58 412 1234567 o 0412 1234567',
             'any.required': 'El teléfono es obligatorio',
             'string.empty': 'El teléfono es obligatorio'
         }),
@@ -51,10 +51,10 @@ export const CreateBeneficiaryValidated = Joi.object({
     }),
     "emergency_contact": Joi.string().optional().allow('', null),
     "emergency_phone": Joi.string()
-        .pattern(/^\+58\s?\d{3}\s?\d{7}$/)
+        .pattern(/^(?:\+58|0)\s?\d{3}\s?\d{7}$/)
         .optional().allow('', null)
         .messages({
-            'string.pattern.base': 'El teléfono de emergencia debe ser formato +58 412 1234567'
+            'string.pattern.base': 'El teléfono de emergencia debe ser formato +58 412 1234567 o 0412 1234567'
         }),
     "dependents": Joi.number().integer().min(0).optional().default(0).messages({
         'number.base': 'Los dependientes deben ser un número',

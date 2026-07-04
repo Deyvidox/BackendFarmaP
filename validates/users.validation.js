@@ -26,8 +26,8 @@ export const UpdateUserValidated = Joi.object({
     "identification_number": Joi.string().pattern(/^[VEJ]-\d{6,8}$/).optional().allow('', null).messages({
         'string.pattern.base': 'Cédula/RIF inválida (formato: V-12345678)'
     }),
-    "phone": Joi.string().pattern(/^\+58\s?\d{3}\s?\d{7}$/).optional().allow('', null).messages({
-        'string.pattern.base': 'Teléfono inválido (formato: +58 412 1234567)'
+    "phone": Joi.string().pattern(/^(?:\+58|0)\s?\d{3}\s?\d{7}$/).optional().allow('', null).messages({
+        'string.pattern.base': 'Teléfono inválido (formato: +58 412 1234567 o 0412 1234567)'
     }),
     "address": Joi.string().optional().allow('', null),
     "status": Joi.string().valid('Active', 'Inactive', 'Suspended').optional().messages({

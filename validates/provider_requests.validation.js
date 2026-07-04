@@ -30,6 +30,9 @@ export const CreateProviderRequestValidated = Joi.object({
 })
 
 export const UpdateProviderRequestValidated = Joi.object({
-    "status": Joi.string().valid('PENDIENTE', 'ENVIADA', 'EN_REVISION', 'APROBADA_INTERNA', 'APROBADA', 'RECHAZADA', 'COMPLETADA').required(),
+    "status": Joi.string().valid('PENDIENTE', 'ENVIADA', 'EN_REVISION', 'APROBADA_INTERNA', 'APROBADA', 'RECHAZADA', 'COMPLETADA').required().messages({
+        'any.only': 'El estado no es válido',
+        'any.required': 'El estado es obligatorio'
+    }),
     "observations": Joi.string().optional().allow('', null)
 })
