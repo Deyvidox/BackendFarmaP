@@ -18,7 +18,7 @@ export const LoginControl = async (req, res, next) => {
         const { results, data } = await Login(value.login)
 
         if (results == 0) {
-            req.message = { "type": "Not Found", "message": "The User NOT Exists", "status": 400 }
+            req.message = { "type": "Not Found", "message": "El usuario no existe", "status": 400 }
             return next()
         }
 
@@ -33,14 +33,14 @@ export const LoginControl = async (req, res, next) => {
             req.message = {
                 "type": "Successfully", "message": {
                     token,
-                    text: "Login Correctly"
+                    text: "Inicio de sesión exitoso"
                 }, "status": 200
             }
 
             return next()
         }
         else {
-            req.message = { "type": "Error", "message": "Incorrect credentials", "status": 400 }
+            req.message = { "type": "Error", "message": "Credenciales incorrectas", "status": 400 }
             return next()
         }
     } catch (err) {

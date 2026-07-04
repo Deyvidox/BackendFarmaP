@@ -8,6 +8,7 @@ export const RegisterValidated = Joi.object({
         .required()
         .messages({
             'string.empty': 'El nombre es obligatorio',
+            'any.required': 'El nombre es obligatorio',
             'string.min': 'El nombre debe tener al menos 2 caracteres',
             'string.max': 'El nombre no puede exceder 100 caracteres',
             'string.pattern.base': 'El nombre solo puede contener letras y espacios'
@@ -67,6 +68,7 @@ export const RegisterValidated = Joi.object({
         .required()
         .messages({
             'string.empty': 'El usuario es obligatorio',
+            'any.required': 'El usuario es obligatorio',
             'string.min': 'El usuario debe tener al menos 4 caracteres',
             'string.max': 'El usuario no puede exceder 50 caracteres',
             'string.pattern.base': 'Solo letras, números, puntos, guiones y guiones bajos'
@@ -77,6 +79,7 @@ export const RegisterValidated = Joi.object({
         .required()
         .messages({
             'string.empty': 'El correo es obligatorio',
+            'any.required': 'El correo es obligatorio',
             'string.email': 'Correo electrónico inválido'
         }),
 
@@ -86,6 +89,7 @@ export const RegisterValidated = Joi.object({
         .required()
         .messages({
             'string.empty': 'La contraseña es obligatoria',
+            'any.required': 'La contraseña es obligatoria',
             'string.min': 'La contraseña debe tener al menos 8 caracteres',
             'string.pattern.base': 'La contraseña debe contener al menos una letra y un número'
         }),
@@ -95,7 +99,7 @@ export const RegisterValidated = Joi.object({
         .optional()
         .default('Active')
         .messages({
-            'any.only': 'El estado debe ser Active, Inactive o Suspended'
+            'any.only': 'El estado debe ser Activo, Inactivo o Suspendido'
         }),
 
     "role_id": Joi.string()

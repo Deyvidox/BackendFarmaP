@@ -3,7 +3,7 @@ const Messages = (req, res) => {
     if (!req.message) {
         return res.status(500).json({
             type: "Error",
-            message: "No messages"
+            message: "Sin mensajes"
         });
     }
 
