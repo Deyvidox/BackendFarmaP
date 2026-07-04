@@ -113,6 +113,47 @@ export const DeleteUser = async (id) => {
     return { results: rowCount, data: rows[0] }
 }
 
+export const GetUserProfile = async (id) => {
+    const sql = `
+        SELECT 
+            u.id, u.identification_number, u.first_name, u.last_name,
+            u.email, u.phone, u.address, u.username, u.status,
+            u.position, u.department, u.date_of_birth, u.created_at, u.last_access,
+            u.role_id, r.name AS role_name
+        FROM users u
+        INNER JOIN roles r ON r.id = u.role_id
+        WHERE u.id = $1
+    `
+    const { rows, rowCount } = await database.query(sql, [id])
+    return { results: rowCount, data: rows[0] }
+}
+
+export const UpdateUserProfile = async (id, userData) => {
+    await checkUniqueFields(userData, id)
+    const sql = `
+        UPDATE users SET
+            first_name = $1,
+            last_name = $2,
+            email = $3,
+            phone = $4,
+            address = $5,
+            updated_at = NOW()
+        WHERE id = $6
+        RETURNING id, username, email, first_name, last_name, phone, address, 
+                  identification_number, date_of_birth, position, department, status
+    `
+    const values = [
+        userData.first_name,
+        userData.last_name,
+        userData.email,
+        userData.phone || null,
+        userData.address || null,
+        id
+    ]
+    const { rows, rowCount } = await database.query(sql, values)
+    return { results: rowCount, data: rows[0] }
+}
+
 export const GetUserStats = async () => {
     const totalSql = `SELECT COUNT(*) AS total FROM users`
     const activeSql = `SELECT COUNT(*) AS count FROM users WHERE status = 'Active'`
